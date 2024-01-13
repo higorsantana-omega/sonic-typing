@@ -16,7 +16,7 @@ export const useTyping = (enabled: boolean) => {
     totalTyped.current = 0
   }, [])
  
-  const keydownHandler = useCallback((_, { code, key}: KeyboardEvent) => {
+  const keydownHandler = useCallback(({ code, key }: KeyboardEvent) => {
     if (!enabled || !keyboardAllowed(code)) {
       return
     }
@@ -33,10 +33,10 @@ export const useTyping = (enabled: boolean) => {
   }, [cursor, enabled])
 
   useEffect(() => {
-    window.addEventListener('keydown', keydownHandler as EventListener)
+    window.addEventListener('keydown', keydownHandler as unknown as EventListener)
 
     return () => {
-      window.removeEventListener('keydown', keydownHandler as EventListener)
+      window.removeEventListener('keydown', keydownHandler as unknown as EventListener)
     }
   }, [keydownHandler])
 
