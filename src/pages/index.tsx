@@ -1,15 +1,13 @@
-import { faker } from "@faker-js/faker";
-import { useEffect, useState } from "react";
 import { Result } from "~/layout/Result";
 import { Typing } from "~/layout/Typing";
 import { Words } from "~/layout/Words";
+import { useSystem } from "~/libs/useSystem";
 
 export default function Home() {
-  const [words, setWords] = useState<string>('')
-
-  useEffect(() => {
-    setWords(faker.word.words(15))
-  }, [])
+  const {
+    typed,
+    words
+  } = useSystem()
 
   return (
     <main>
@@ -17,7 +15,8 @@ export default function Home() {
         <Words words={words} />
         <Typing
           className='absolute inset-0'
-          typedCharacters={words}
+          typedCharacters={typed}
+          words={words}
         />
       </div>
       <Result
