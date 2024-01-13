@@ -9,7 +9,8 @@ export default {
         sans: ["var(--font-sans)", ...fontFamily.sans],
       },
       colors: {
-        primary: '#0078d4'
+        primary: '#0078d4',
+        error: '#f98e9d'
       }
     },
   },
