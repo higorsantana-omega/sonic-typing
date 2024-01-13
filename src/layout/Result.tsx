@@ -4,13 +4,18 @@ export interface ResultProps {
   accuracyPercentage: number
   total: number
   errors: number
+  show: boolean
   className?: string
 }
 
-export function Result ({ accuracyPercentage, total, errors, className }: ResultProps) {
+export function Result ({ accuracyPercentage, total, errors, show, className }: ResultProps) {
   const animation: AnimationProps = {
     initial: { opacity: 0 },
     animate: { opacity: 1 }
+  }
+
+  if (!show) {
+    return null
   }
 
   return (

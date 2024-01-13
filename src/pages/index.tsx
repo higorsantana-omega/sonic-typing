@@ -2,11 +2,15 @@ import { Result } from "~/layout/Result";
 import { Typing } from "~/layout/Typing";
 import { Words } from "~/layout/Words";
 import { useSystem } from "~/libs/useSystem";
+import { calculateAccurancy } from "~/utils/wordsResult";
 
 export default function Home() {
   const {
     typed,
-    words
+    words,
+    errors,
+    totalTyped,
+    action
   } = useSystem()
 
   return (
@@ -21,9 +25,10 @@ export default function Home() {
       </div>
       <Result
         className='mt-10'
-        accuracyPercentage={100}
-        total={90}
-        errors={3100}
+        show={action !== 'finish'}
+        accuracyPercentage={calculateAccurancy(errors, totalTyped)}
+        total={totalTyped}
+        errors={errors}
       />
     </main>
   );
