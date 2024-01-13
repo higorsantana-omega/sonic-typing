@@ -6,6 +6,15 @@ export const useTyping = (enabled: boolean) => {
   const [cursor, setCursor] = useState<number>(0)
 
   const totalTyped = useRef(0)
+
+  const clearTyped = useCallback(() => {
+    setTyped('')
+    setCursor(0)
+  }, [])
+
+  const resetTotal = useCallback(() => {
+    totalTyped.current = 0
+  }, [])
  
   const keydownHandler = useCallback((_, { code, key}: KeyboardEvent) => {
     if (!enabled || !keyboardAllowed(code)) {
@@ -34,6 +43,9 @@ export const useTyping = (enabled: boolean) => {
   return {
     cursor,
     typed,
-    totalTyped: totalTyped.current
+    totalTyped: totalTyped.current,
+
+    clearTyped,
+    resetTotal
   }
 }
