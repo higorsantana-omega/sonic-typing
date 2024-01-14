@@ -1,4 +1,5 @@
 import { type AnimationProps, motion } from 'framer-motion'
+import { cn } from '~/utils/cn'
 
 export interface ResultProps {
   accuracyPercentage: number
@@ -19,37 +20,62 @@ export function Result ({ accuracyPercentage, total, errors, show, className }: 
   }
 
   return (
-    <motion.ul
-      className={`flex flex-col items-center space-y-2 ${className}`}
+    <motion.div
+      className={cn(`grid items-start justify-between gap-x-8 grid-flow-col`, className)}
+      {...animation}
+      transition={{ duration: 0.3, delay: 0 }}
     >
-      <motion.li
-        className='text-xl font-semibold text-white'
+      <Information
+        delay={0.5}
+        duration={0.3}
+        title={'Accuracy'}
+        information={accuracyPercentage}
+      />
+
+      <Information
+        delay={0.5}
+        duration={1}
+        title={'Errors'}
+        information={errors}
+      />
+
+      <Information
+        delay={0.5}
+        duration={1.4}
+        title={'Typed'}
+        information={total}
+      />
+    </motion.div>
+  )
+}
+
+function Information (
+  { duration, delay, title, information }: { duration: number; delay: number; title: string; information: string | number }
+) {
+  const animation: AnimationProps = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 }
+  }
+
+  return (
+    <motion.div
+        className={'text-gray-500 text-lg leading-4'}
         {...animation}
-        transition={{ duration: 0.3, delay: 0 }}
+        transition={{ duration, delay }}
       >
-        Result
-      </motion.li>
-      <motion.li
-        {...animation}
-        transition={{ duration: 0.3, delay: 0.5 }}
-        className='text-white'
-      >
-        Accuracy: <span className='text-primary'>{accuracyPercentage}</span>
-      </motion.li>
-      <motion.li
-        className='text-white'
-        {...animation}
-        transition={{ duration: 0.3, delay: 1 }}
-      >
-        Errors: <span className='text-primary'>{errors}</span>
-      </motion.li>
-      <motion.li
-        {...animation}
-        transition={{ duration: 0.3, delay: 1.4 }}
-        className='text-white'
-      >
-        Typed: <span className='text-primary'>{total}</span>
-      </motion.li>
-    </motion.ul>
+        <motion.div
+          className='mb-2 text-md'
+        >
+          {title}
+        </motion.div>
+          
+        <motion.div
+          className={'text-primary'}
+          {...animation}
+          transition={{ duration, delay: delay * 1.65 }}
+        >
+          {information}
+        </motion.div>
+    </motion.div>
   )
 }

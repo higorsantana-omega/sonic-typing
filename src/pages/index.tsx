@@ -23,6 +23,7 @@ export default function Home() {
           words={words}
         />
       </div>
+
       <Result
         className='mt-10'
         show={action !== 'finish'}
