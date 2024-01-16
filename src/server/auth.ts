@@ -5,10 +5,10 @@ import {
   type DefaultSession,
   type NextAuthOptions,
 } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-
-import { env } from "~/env";
-import { db } from "~/server/db";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from 'bcrypt'
+import { prisma } from "~/server/db";
+import { type AuthUser, jwtHelper, tokenOneDay, tokenOnWeek } from "../utils/jwtHelper"
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -37,31 +37,125 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
-  callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60
   },
-  adapter: PrismaAdapter(db),
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+    CredentialsProvider({
+      id: 'sonic-typing-auth',
+      name: 'Login with username',
+      async authorize(credentials, req) {
+        try {
+          const user = await prisma.user.findFirst({
+            where: { name: credentials?.username }
+          })
+
+          if (user && credentials) {
+            const validPassword = await bcrypt.compare(credentials.password, user.password as string)
+            if (validPassword) {
+              return {
+                id: user.id,
+                name: user.name
+              }
+            }
+          }
+
+          if (!user && credentials) {
+            const isUser = await prisma.user.findFirst({
+              where: { name: credentials?.username }
+            })
+
+            if (!isUser) {
+              const hashPassword = await bcrypt.hash(credentials.password, 12) 
+              const newUser = await prisma.user.create({
+                data: {
+                  name: credentials.username,
+                  password: hashPassword
+                }
+              })
+
+              return {
+                id: newUser.id,
+                name: newUser.name
+              }
+            }
+          }
+        } catch (error) {
+          console.log(error)
+        }
+        return null
+      },
+      credentials: {
+        username: {
+          label: 'Username',
+          type: 'text',
+          placeholder: 'sonic'
+        },
+        password: {
+          label: 'Password',
+          type: 'password'
+        }
+      }
     }),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
   ],
+  callbacks: {
+    async jwt({ token, user, profile, account, trigger }) {
+      const isNewUser = trigger === 'signUp'
+
+      if (user) {
+        const authUser = { id: user.id, name: user.name } as AuthUser;
+
+        const accessToken = await jwtHelper.createAcessToken(authUser);
+        const refreshToken = await jwtHelper.createRefreshToken(authUser);
+        const accessTokenExpired = Date.now() /1000 + tokenOneDay;
+        const refreshTokenExpired = Date.now() /1000 + tokenOnWeek;
+
+        return {
+          ...token, accessToken, refreshToken, accessTokenExpired, refreshTokenExpired,
+          user: authUser
+        }
+      }
+
+      if (token) {
+        const tokenExpired = Date.now() / 1000 > token.accessTokenExpired
+
+        if (tokenExpired) {
+          const verifyToken = await jwtHelper.verifyToken(token.refreshToken)
+
+          if (verifyToken) {
+            const user = await prisma.user.findFirst({
+              where: { name: token.user?.username }
+            })
+
+            if (user) {
+              const accessToken = await jwtHelper.createAcessToken(token.user);
+              const accessTokenExpired = Date.now() / 1000 + tokenOneDay
+
+              return {...token, accessToken, accessTokenExpired }
+            }
+          }
+
+          return { ...token, error: 'RefreshAccessTokenError' }
+        }
+      }
+
+      return token
+    },
+    async session({ session, token }) {
+      if (token){
+        session.user = {
+          name: token.user.name,
+          userId: token.user.id
+        }
+      }
+  
+      session.error = token.error
+    
+      return session
+    }
+  },
 };
 
 /**
