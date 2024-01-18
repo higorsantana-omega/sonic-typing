@@ -1,3 +1,4 @@
+import { Modes } from "~/layout/Modes";
 import { Result } from "~/layout/Result";
 import { Typing } from "~/layout/Typing";
 import { Words } from "~/layout/Words";
@@ -15,6 +16,8 @@ export default function Home() {
 
   return (
     <main>
+      <Modes />
+
       <div className='relative max-w-xl mt-3 text-4xl leading-relaxed break-all'>
         <Words words={words} />
         <Typing
